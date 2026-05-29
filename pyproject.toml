@@ -19,5 +19,33 @@ dependencies = [
 [dependency-groups]
 dev = [
     "jupyter>=1.1.1",
+    "mypy>=2.1.0",
+    "pandas-stubs>=3.0.0.260204",
+    "pre-commit>=4.6.0",
     "pytest>=9.0.3",
+    "ruff>=0.15.15",
 ]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+exclude = [".venv","migrations", "alembic"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = ["D100", "D101", "D102", "D103", "D104", "COM812", "FAST001", "TRY003", "EM101", "FBT001", "FBT002", "TRY301", "D203", "D213"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+
+[[tool.mypy.overrides]]
+module = "app.config"
+disable_error_code = ["call-arg"]
+
+[[tool.mypy.overrides]]
+module = "app.ws.manager"
+disable_error_code = ["no-untyped-call"]

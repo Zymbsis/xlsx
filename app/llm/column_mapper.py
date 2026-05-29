@@ -4,8 +4,7 @@ import pandas as pd
 from groq import AsyncGroq
 
 from app.config import settings
-from app.llm.prompts import (MAP_COLUMNS_SYSTEM_PROMPT,
-                             MAP_COLUMNS_USER_TEMPLATE)
+from app.llm.prompts import MAP_COLUMNS_SYSTEM_PROMPT, MAP_COLUMNS_USER_TEMPLATE
 from app.schemas.column_mapping import ColumnMapping
 
 client = AsyncGroq(api_key=settings.groq_api_key)
@@ -31,7 +30,11 @@ async def map_columns(df: pd.DataFrame) -> ColumnMapping:
         response_format={"type": "json_object"},
         temperature=0,
     )
+    content = response.choices[0].message.content
 
-    data = json.loads(response.choices[0].message.content)
+    if content is None:
+        raise RuntimeError("LLM returned empty content")
+
+    data = json.loads(content)
 
     return ColumnMapping(**data)

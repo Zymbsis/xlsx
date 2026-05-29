@@ -18,6 +18,4 @@ class ErrorEvent(BaseModel):
     detail: str
 
 
-WSEvent = Annotated[
-    ProcessEvent | SuccessEvent | ErrorEvent, Field(discriminator="type")
-]
+WSEvent = Annotated[ProcessEvent | SuccessEvent | ErrorEvent, Field(discriminator="type")]

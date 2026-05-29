@@ -9,9 +9,7 @@ from app.config import settings
 
 
 async def connect(app: FastAPI) -> None:
-    app.state.redis = aioredis.from_url(
-        settings.redis_url, decode_responses=True, socket_timeout=None
-    )
+    app.state.redis = aioredis.from_url(settings.redis_url, decode_responses=True, socket_timeout=None)
 
 
 async def disconnect(app: FastAPI) -> None:
