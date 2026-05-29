@@ -6,10 +6,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    environment: Literal["dev", "prod"] = "dev"
+
     api_key: str
     groq_api_key: str
     pg_database_url: str
-    environment: Literal["dev", "prod"] = "dev"
+    redis_url: str
 
     model_config = SettingsConfigDict(env_file=".env")
 
