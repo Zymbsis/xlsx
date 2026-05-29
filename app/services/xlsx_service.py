@@ -10,7 +10,7 @@ from app.db.models import CompanyDomain, UploadOperation
 from app.llm.column_mapper import map_columns
 from app.schemas.column_mapping import ColumnMapping
 from app.schemas.ws_events import ErrorEvent, ProcessEvent, SuccessEvent
-from app.ws.manager import ws_manager
+from app.ws.manager import WebSocketManager
 
 
 async def xlsx_process(
@@ -18,6 +18,7 @@ async def xlsx_process(
     nac_file: UploadFile,
     session: AsyncSession,
     redis: Redis,
+    ws_manager: WebSocketManager,
     ws_session_id: UUID | None = None,
 ) -> UUID:
     try:
