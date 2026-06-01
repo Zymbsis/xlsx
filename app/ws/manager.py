@@ -1,10 +1,11 @@
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Annotated
 
 import anyio
 import redis.exceptions as redis_exceptions
-from fastapi import WebSocket
+from fastapi import Depends, WebSocket
 from redis.asyncio import Redis
 
 from app.schemas.ws_events import WSEvent
@@ -44,4 +45,8 @@ class WebSocketManager:
                 await pubsub.aclose()
 
 
-ws_manager = WebSocketManager()
+def get_ws_manager() -> WebSocketManager:
+    return WebSocketManager()
+
+
+WSManagerDep = Annotated[WebSocketManager, Depends(get_ws_manager)]

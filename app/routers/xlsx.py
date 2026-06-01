@@ -9,6 +9,7 @@ from app.schemas.upload_response import UploadResponse
 from app.security.security import verify_api_key
 from app.services.xlsx_service import xlsx_process
 from app.utils.file_validators import validate_nac_file, validate_sup_file
+from app.ws.manager import WSManagerDep
 
 router = APIRouter(tags=["xlsx"])
 
@@ -17,6 +18,7 @@ router = APIRouter(tags=["xlsx"])
 async def xlsx_upload(
     session: SessionDep,
     redis: RedisDep,
+    ws_manager: WSManagerDep,
     sup_file: Annotated[UploadFile, Depends(validate_sup_file)],
     nac_file: Annotated[UploadFile, Depends(validate_nac_file)],
     ws_session_id: UUID | None = None,
@@ -26,6 +28,7 @@ async def xlsx_upload(
         nac_file,
         session,
         redis,
+        ws_manager,
         ws_session_id,
     )
 

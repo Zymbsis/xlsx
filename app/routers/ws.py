@@ -2,13 +2,13 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.config import settings
 from app.db.redis import RedisDep
-from app.ws.manager import ws_manager
+from app.ws.manager import WSManagerDep
 
 router = APIRouter(tags=["ws"])
 
 
 @router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket, redis: RedisDep) -> None:
+async def websocket_endpoint(websocket: WebSocket, redis: RedisDep, ws_manager: WSManagerDep) -> None:
     await websocket.accept()
 
     data = await websocket.receive_json()
