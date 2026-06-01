@@ -11,10 +11,10 @@ from app.routers import ws, xlsx
 async def lifespan(app: FastAPI):
     async with engine.connect() as conn:
         await conn.close()
-    await redis.connect()
+    await redis.connect(app)
     yield
     await engine.dispose()
-    await redis.disconnect()
+    await redis.disconnect(app)
 
 
 app = FastAPI(lifespan=lifespan)

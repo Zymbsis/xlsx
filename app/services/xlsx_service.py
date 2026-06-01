@@ -3,6 +3,7 @@ from uuid import UUID
 
 import pandas as pd
 from fastapi import HTTPException, UploadFile
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import CompanyDomain, UploadOperation
@@ -16,10 +17,13 @@ async def xlsx_process(
     sup_file: UploadFile,
     nac_file: UploadFile,
     session: AsyncSession,
+    redis: Redis,
     ws_session_id: UUID | None = None,
 ):
     try:
-        await ws_manager.publish(ws_session_id, ProcessEvent(stage="reading_files"))
+        await ws_manager.publish(
+            redis, ws_session_id, ProcessEvent(stage="reading_files")
+        )
 
         sup_df = pd.read_excel(sup_file.file, header=None).dropna(how="all")
         nac_df = pd.read_excel(nac_file.file, header=None).dropna(how="all")
@@ -29,7 +33,9 @@ async def xlsx_process(
         if nac_df.empty:
             raise HTTPException(status_code=422, detail="NAC file is empty")
 
-        await ws_manager.publish(ws_session_id, ProcessEvent(stage="mapping_columns"))
+        await ws_manager.publish(
+            redis, ws_session_id, ProcessEvent(stage="mapping_columns")
+        )
 
         sup_mapping, nac_mapping = await asyncio.gather(
             map_columns(sup_df), map_columns(nac_df)
@@ -40,14 +46,18 @@ async def xlsx_process(
                 status_code=422, detail="Domain column not found in one of the files"
             )
 
-        await ws_manager.publish(ws_session_id, ProcessEvent(stage="normalizing"))
+        await ws_manager.publish(
+            redis, ws_session_id, ProcessEvent(stage="normalizing")
+        )
 
         sup_df = process_df(sup_df, sup_mapping, include_company_name=False)
         nac_df = process_df(nac_df, nac_mapping)
         sup_df = normalize_df_domains(sup_df)
         nac_df = normalize_df_domains(nac_df)
 
-        await ws_manager.publish(ws_session_id, ProcessEvent(stage="subtracting"))
+        await ws_manager.publish(
+            redis, ws_session_id, ProcessEvent(stage="subtracting")
+        )
 
         nac_df = nac_df[~nac_df[0].isin(sup_df[0])]
 
@@ -58,7 +68,7 @@ async def xlsx_process(
 
         nac_df = normalize_df_names(nac_df)
 
-        await ws_manager.publish(ws_session_id, ProcessEvent(stage="saving"))
+        await ws_manager.publish(redis, ws_session_id, ProcessEvent(stage="saving"))
 
         operation = UploadOperation()
         session.add(operation)
@@ -75,11 +85,11 @@ async def xlsx_process(
         await session.commit()
 
         await ws_manager.publish(
-            ws_session_id, SuccessEvent(operation_id=str(operation.id))
+            redis, ws_session_id, SuccessEvent(operation_id=str(operation.id))
         )
         return operation.id
     except HTTPException as e:
-        await ws_manager.publish(ws_session_id, ErrorEvent(detail=e.detail))
+        await ws_manager.publish(redis, ws_session_id, ErrorEvent(detail=e.detail))
         raise
 
 
