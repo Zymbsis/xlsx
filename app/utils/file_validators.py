@@ -3,22 +3,18 @@ from fastapi import HTTPException, UploadFile
 XLSX_MAGIC_BYTES = b"PK\x03\x04"
 
 
-async def validate_xlsx_file(file: UploadFile):
+async def validate_xlsx_file(file: UploadFile) -> UploadFile:
     if file.size == 0:
         raise HTTPException(status_code=400, detail="File is missing")
 
-    if not file.filename.endswith(".xlsx"):
-        raise HTTPException(
-            status_code=400, detail=f"{file.filename} is not an xlsx file"
-        )
+    if file.filename and not file.filename.endswith(".xlsx"):
+        raise HTTPException(status_code=400, detail=f"{file.filename} is not an xlsx file")
 
     header = await file.read(4)
     await file.seek(0)
 
     if header != XLSX_MAGIC_BYTES:
-        raise HTTPException(
-            status_code=400, detail=f"{file.filename} is not a valid xlsx file"
-        )
+        raise HTTPException(status_code=400, detail=f"{file.filename} is not a valid xlsx file")
 
     return file
 

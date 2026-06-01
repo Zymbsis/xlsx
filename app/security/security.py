@@ -8,8 +8,6 @@ from app.config import SettingsDep
 api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
 
 
-async def verify_api_key(
-    settings: SettingsDep, api_key: Annotated[str, Security(api_key_header)]
-):
+async def verify_api_key(settings: SettingsDep, api_key: Annotated[str, Security(api_key_header)]) -> None:
     if api_key != settings.api_key:
         raise HTTPException(status_code=403, detail="Unauthorized")

@@ -1,4 +1,5 @@
 import uuid
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 import anyio
@@ -11,25 +12,21 @@ from app.schemas.ws_events import WSEvent
 
 class WebSocketManager:
     def _channel(self, session_id: uuid.UUID | None) -> str:
-        return f"ws:{str(session_id)}"
+        return f"ws:{session_id!s}"
 
-    async def publish(
-        self, redis: Redis, session_id: uuid.UUID | None, payload: WSEvent
-    ):
+    async def publish(self, redis: Redis, session_id: uuid.UUID | None, payload: WSEvent) -> None:
         if session_id:
-            await redis.publish(
-                self._channel(str(session_id)), payload.model_dump_json()
-            )
+            await redis.publish(self._channel(session_id), payload.model_dump_json())
 
     @asynccontextmanager
-    async def listen(self, websocket: WebSocket, redis: Redis):
-        session_id = str(uuid.uuid4())
+    async def listen(self, websocket: WebSocket, redis: Redis) -> AsyncIterator[uuid.UUID]:
+        session_id = uuid.uuid4()
         pubsub = redis.pubsub()
 
         await pubsub.subscribe(self._channel(session_id))
-        await websocket.send_json({"ws_session_id": session_id})
+        await websocket.send_json({"ws_session_id": str(session_id)})
 
-        async def _reader():
+        async def _reader() -> None:
             try:
                 async for message in pubsub.listen():
                     if message["type"] == "message":

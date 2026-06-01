@@ -16,6 +16,4 @@ class CompanyDomain(Base):
     domain: Mapped[str]
     name: Mapped[str | None]
 
-    operation_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("upload_operation.id", ondelete="CASCADE")
-    )
+    operation_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("upload_operation.id", ondelete="CASCADE"))

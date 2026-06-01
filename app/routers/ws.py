@@ -8,7 +8,7 @@ router = APIRouter(tags=["ws"])
 
 
 @router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket, redis: RedisDep):
+async def websocket_endpoint(websocket: WebSocket, redis: RedisDep) -> None:
     await websocket.accept()
 
     data = await websocket.receive_json()
