@@ -22,4 +22,3 @@ app = FastAPI(lifespan=lifespan)
 
 app.include_router(xlsx.router)
 app.include_router(ws.router)
-app.include_router(ws.router)
