@@ -45,8 +45,4 @@ class WebSocketManager:
                 await pubsub.aclose()
 
 
-def get_ws_manager() -> WebSocketManager:
-    return WebSocketManager()
-
-
-WSManagerDep = Annotated[WebSocketManager, Depends(get_ws_manager)]
+WSManagerDep = Annotated[WebSocketManager, Depends()]
