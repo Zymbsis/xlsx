@@ -4,11 +4,11 @@ from uuid import UUID
 import pandas as pd
 from fastapi import HTTPException, UploadFile
 from redis.asyncio import Redis
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import CompanyDomain, UploadOperation
 from app.llm.column_mapper import map_columns
+from app.repositories.company_domain_repository import CompanyDomainRepoDep
 from app.schemas.column_mapping import ColumnMapping
+from app.schemas.company_domain import CompanyDomainCreate
 from app.schemas.ws_events import ErrorEvent, ProcessEvent, SuccessEvent
 from app.ws.manager import WebSocketManager
 
@@ -16,7 +16,7 @@ from app.ws.manager import WebSocketManager
 async def xlsx_process(
     sup_file: UploadFile,
     nac_file: UploadFile,
-    session: AsyncSession,
+    company_domain_repo: CompanyDomainRepoDep,
     redis: Redis,
     ws_manager: WebSocketManager,
     ws_session_id: UUID | None = None,
@@ -57,26 +57,18 @@ async def xlsx_process(
 
         await ws_manager.publish(redis, ws_session_id, ProcessEvent(stage="saving"))
 
-        operation = UploadOperation()
-        session.add(operation)
-        await session.flush()
-        records = [
-            CompanyDomain(
-                operation_id=operation.id,
-                domain=row[0],
-                name=row[1] if len(nac_df.columns) > 1 else None,
-            )
-            for _, row in nac_df.iterrows()
+        domains = [
+            CompanyDomainCreate(domain=rec[0], name=None if pd.isna(v := rec.get(1)) else v or None)
+            for rec in nac_df.to_dict(orient="records")
         ]
-        session.add_all(records)
-        await session.commit()
+        operation_id = await company_domain_repo.save_many(domains)
 
-        await ws_manager.publish(redis, ws_session_id, SuccessEvent(operation_id=str(operation.id)))
+        await ws_manager.publish(redis, ws_session_id, SuccessEvent(operation_id=str(operation_id)))
     except HTTPException as e:
         await ws_manager.publish(redis, ws_session_id, ErrorEvent(detail=e.detail))
         raise
     else:
-        return operation.id
+        return operation_id
 
 
 def process_df(df: pd.DataFrame, mapping: ColumnMapping, include_company_name: bool = True) -> pd.DataFrame:

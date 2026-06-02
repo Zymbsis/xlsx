@@ -33,7 +33,7 @@ exclude = [".venv","migrations", "alembic"]
 
 [tool.ruff.lint]
 select = ["ALL"]
-ignore = ["D100", "D101", "D102", "D103", "D104", "COM812", "FAST001", "TRY003", "EM101", "FBT001", "FBT002", "TRY301", "D203", "D213", "PLR0913"]
+ignore = ["D100", "D101", "D102", "D103", "D104", "D107", "COM812", "FAST001", "TRY003", "EM101", "FBT001", "FBT002", "TRY301", "D203", "D213", "PLR0913"]
 
 [tool.ruff.format]
 quote-style = "double"
