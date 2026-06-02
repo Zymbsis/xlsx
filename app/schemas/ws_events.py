@@ -1,6 +1,15 @@
+from enum import StrEnum
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
+
+
+class ProcessStage(StrEnum):
+    READING_FILES = "reading_files"
+    MAPPING_COLUMNS = "mapping_columns"
+    NORMALIZING = "normalizing"
+    SUBTRACTING = "subtracting"
+    SAVING = "saving"
 
 
 class ProcessEvent(BaseModel):
