@@ -1,20 +1,23 @@
-from fastapi import HTTPException, UploadFile
+from fastapi import UploadFile
+
+from app.exceptions.http import AppHTTPError
+from app.exceptions.messages import FILE_MISSING, INVALID_XLSX_FILE, NOT_XLSX_FILE
 
 XLSX_MAGIC_BYTES = b"PK\x03\x04"
 
 
 async def validate_xlsx_file(file: UploadFile) -> UploadFile:
     if file.size == 0:
-        raise HTTPException(status_code=400, detail="File is missing")
+        raise AppHTTPError.bad_request(FILE_MISSING)
 
     if file.filename and not file.filename.endswith(".xlsx"):
-        raise HTTPException(status_code=400, detail=f"{file.filename} is not an xlsx file")
+        raise AppHTTPError.bad_request(NOT_XLSX_FILE.format(filename=file.filename))
 
     header = await file.read(4)
     await file.seek(0)
 
     if header != XLSX_MAGIC_BYTES:
-        raise HTTPException(status_code=400, detail=f"{file.filename} is not a valid xlsx file")
+        raise AppHTTPError.bad_request(INVALID_XLSX_FILE.format(filename=file.filename))
 
     return file
 
