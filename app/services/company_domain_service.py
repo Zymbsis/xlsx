@@ -11,9 +11,9 @@ from app.exceptions.messages import (
     NAC_FILE_EMPTY,
     RESULT_EMPTY_AFTER_SUBTRACTION,
 )
-from app.llm.column_mapper import map_columns
 from app.repositories.company_domain_repository import CompanyDomainRepoDep, CompanyDomainRepository
 from app.schemas.ws_events import ErrorEvent, ProcessEvent, ProcessStage, SuccessEvent
+from app.services.column_mapper_service import ColumnMapperService, ColumnMapperServiceDep
 from app.services.company_domain_data_service import CompanyDomainDataServiceDep
 from app.ws.manager import WebSocketManager, WSManagerDep
 
@@ -22,10 +22,12 @@ class CompanyDomainService:
     def __init__(
         self,
         company_domain_data_service: CompanyDomainDataServiceDep,
+        column_mapper_service: ColumnMapperService,
         company_domain_repo: CompanyDomainRepository,
         ws_manager: WebSocketManager,
     ) -> None:
         self._company_domain_data_service = company_domain_data_service
+        self._column_mapper_service = column_mapper_service
         self._company_domain_repo = company_domain_repo
         self._ws = ws_manager
 
@@ -45,7 +47,9 @@ class CompanyDomainService:
 
             await self._ws.publish(ws_session_id, ProcessEvent(stage=ProcessStage.MAPPING_COLUMNS))
 
-            sup_mapping, nac_mapping = await asyncio.gather(map_columns(sup_df), map_columns(nac_df))
+            sup_mapping, nac_mapping = await asyncio.gather(
+                self._column_mapper_service.map_columns(sup_df), self._column_mapper_service.map_columns(nac_df)
+            )
 
             if None in (sup_mapping.domain_column, nac_mapping.domain_column):
                 raise AppHTTPError.unprocessable(DOMAIN_COLUMN_NOT_FOUND)
@@ -86,10 +90,11 @@ class CompanyDomainService:
 
 def get_company_domain_service(
     company_domain_data_service: CompanyDomainDataServiceDep,
+    column_mapper_service: ColumnMapperServiceDep,
     company_domain_repo: CompanyDomainRepoDep,
     ws_manager: WSManagerDep,
 ) -> CompanyDomainService:
-    return CompanyDomainService(company_domain_data_service, company_domain_repo, ws_manager)
+    return CompanyDomainService(company_domain_data_service, column_mapper_service, company_domain_repo, ws_manager)
 
 
 CompanyDomainServiceDep = Annotated[CompanyDomainService, Depends(get_company_domain_service)]
