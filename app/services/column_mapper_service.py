@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import Annotated
 
@@ -6,14 +5,14 @@ import pandas as pd
 from fastapi import Depends
 from groq import AsyncGroq
 
-from app.core.log_messages import MAPPED_COLUMNS, MAPPING_COLUMNS_SHAPE
 from app.exceptions.http import AppHTTPError
-from app.exceptions.messages import LLM_EMPTY_RESPONSE
 from app.llm.groq import GroqClientDep
 from app.llm.prompts import MAP_COLUMNS_SYSTEM_PROMPT, MAP_COLUMNS_USER_TEMPLATE
 from app.schemas.column_mapping import ColumnMapping
 
 logger = logging.getLogger(__name__)
+
+SAMPLE_ROW = 10
 
 
 class ColumnMapperService:
@@ -21,9 +20,9 @@ class ColumnMapperService:
         self._groq_client = groq_client
 
     async def map_columns(self, df: pd.DataFrame) -> ColumnMapping:
-        logger.debug(MAPPING_COLUMNS_SHAPE, df.shape)
+        logger.debug("Mapping columns for dataframe shape=%s", df.shape)
 
-        preview_df = df.head(10).copy()
+        preview_df = df.head(SAMPLE_ROW).copy()
         preview_df.columns = [f"col_{i}" for i in range(len(preview_df.columns))]
         preview = preview_df.to_string(index=False)
 
@@ -45,14 +44,12 @@ class ColumnMapperService:
         content = response.choices[0].message.content
 
         if content is None:
-            raise AppHTTPError.internal_server_error(LLM_EMPTY_RESPONSE)
+            raise AppHTTPError.internal_server_error("LLM returned empty content")
 
-        data = json.loads(content)
-
-        mapping = ColumnMapping(**data)
+        mapping = ColumnMapping.model_validate_json(content)
 
         logger.info(
-            MAPPED_COLUMNS,
+            "Mapped columns domain_column=%s company_name_column=%s has_header=%s",
             mapping.domain_column,
             mapping.company_name_column,
             mapping.has_header,

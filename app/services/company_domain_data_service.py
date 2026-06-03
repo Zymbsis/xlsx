@@ -4,7 +4,6 @@ import pandas as pd
 from fastapi import Depends
 
 from app.exceptions.http import AppHTTPError
-from app.exceptions.messages import DOMAIN_COLUMN_NOT_FOUND
 from app.schemas.column_mapping import ColumnMapping
 from app.schemas.company_domain import CompanyDomainCreate
 
@@ -13,9 +12,11 @@ class CompanyDomainDataService:
     def get_df(self, file: BinaryIO) -> pd.DataFrame:
         return pd.read_excel(file, header=None).dropna(how="all")
 
-    def process_df(self, df: pd.DataFrame, mapping: ColumnMapping, include_company_name: bool = True) -> pd.DataFrame:
+    def apply_mapping_to_df(
+        self, df: pd.DataFrame, mapping: ColumnMapping, include_company_name: bool = True
+    ) -> pd.DataFrame:
         if mapping.domain_column is None:
-            raise AppHTTPError.unprocessable(DOMAIN_COLUMN_NOT_FOUND)
+            raise AppHTTPError.unprocessable("Domain column not found in one of the files")
 
         if mapping.has_header:
             df = df.iloc[1:].reset_index(drop=True)

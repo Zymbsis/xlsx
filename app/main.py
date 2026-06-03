@@ -5,7 +5,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.config import settings
-from app.core.log_messages import APPLICATION_STARTUP_COMPLETE
 from app.core.logging import setup_logging
 from app.db import engine as pg
 from app.db import redis
@@ -21,12 +20,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     await pg.connect()
     await redis.connect(app)
-    await groq.connect(app)
+    await groq.initialize(app)
 
-    logger.info(APPLICATION_STARTUP_COMPLETE)
+    logger.info("Application startup complete")
 
     yield
-    await groq.disconnect(app)
+    await groq.shutdown(app)
     await redis.disconnect(app)
     await pg.disconnect()
 
