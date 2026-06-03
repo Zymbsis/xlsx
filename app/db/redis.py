@@ -21,7 +21,7 @@ async def disconnect(app: FastAPI) -> None:
         await redis.aclose()
 
 
-def get_redis(conn: HTTPConnection) -> Redis:
+def get_redis_client(conn: HTTPConnection) -> Redis:
     redis: Redis | None = getattr(conn.app.state, "redis", None)
 
     if redis is None:
@@ -30,4 +30,4 @@ def get_redis(conn: HTTPConnection) -> Redis:
     return redis
 
 
-RedisDep = Annotated[Redis, Depends(get_redis)]
+RedisDep = Annotated[Redis, Depends(get_redis_client)]

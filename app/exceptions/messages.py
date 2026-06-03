@@ -1,6 +1,7 @@
 UNAUTHORIZED = "Unauthorized"
 
 REDIS_NOT_INITIALIZED = "Redis is not initialized"
+GROQ_NOT_INITIALIZED = "Groq client is not initialized"
 LLM_EMPTY_RESPONSE = "LLM returned empty content"
 
 FILE_MISSING = "File is missing"
