@@ -1,12 +1,16 @@
+import logging
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.log_messages import SAVED_COMPANY_DOMAIN_RECORDS, SAVING_COMPANY_DOMAIN_RECORDS
 from app.db.models import CompanyDomain, UploadOperation
 from app.db.session import SessionDep
 from app.schemas.company_domain import CompanyDomainCreate
+
+logger = logging.getLogger(__name__)
 
 
 class CompanyDomainRepository:
@@ -14,6 +18,8 @@ class CompanyDomainRepository:
         self._session = session
 
     async def save_many(self, domains: list[CompanyDomainCreate]) -> UUID:
+        logger.info(SAVING_COMPANY_DOMAIN_RECORDS, len(domains))
+
         operation = UploadOperation()
         self._session.add(operation)
         await self._session.flush()
@@ -21,6 +27,8 @@ class CompanyDomainRepository:
         records = [CompanyDomain(operation_id=operation.id, domain=item.domain, name=item.name) for item in domains]
         self._session.add_all(records)
         await self._session.commit()
+
+        logger.info(SAVED_COMPANY_DOMAIN_RECORDS, operation.id)
 
         return operation.id
 

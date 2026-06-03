@@ -1,15 +1,19 @@
 import json
+import logging
 from typing import Annotated
 
 import pandas as pd
 from fastapi import Depends
 from groq import AsyncGroq
 
+from app.core.log_messages import MAPPED_COLUMNS, MAPPING_COLUMNS_SHAPE
 from app.exceptions.http import AppHTTPError
 from app.exceptions.messages import LLM_EMPTY_RESPONSE
 from app.llm.groq import GroqClientDep
 from app.llm.prompts import MAP_COLUMNS_SYSTEM_PROMPT, MAP_COLUMNS_USER_TEMPLATE
 from app.schemas.column_mapping import ColumnMapping
+
+logger = logging.getLogger(__name__)
 
 
 class ColumnMapperService:
@@ -17,6 +21,8 @@ class ColumnMapperService:
         self._groq_client = groq_client
 
     async def map_columns(self, df: pd.DataFrame) -> ColumnMapping:
+        logger.debug(MAPPING_COLUMNS_SHAPE, df.shape)
+
         preview_df = df.head(10).copy()
         preview_df.columns = [f"col_{i}" for i in range(len(preview_df.columns))]
         preview = preview_df.to_string(index=False)
@@ -43,7 +49,16 @@ class ColumnMapperService:
 
         data = json.loads(content)
 
-        return ColumnMapping(**data)
+        mapping = ColumnMapping(**data)
+
+        logger.info(
+            MAPPED_COLUMNS,
+            mapping.domain_column,
+            mapping.company_name_column,
+            mapping.has_header,
+        )
+
+        return mapping
 
 
 def get_column_mapper_service(groq_client: GroqClientDep) -> ColumnMapperService:
