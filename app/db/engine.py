@@ -4,7 +4,6 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.config import settings
-from app.core.log_messages import POSTGRESQL_CONNECTED, POSTGRESQL_DISCONNECTED
 
 logger = logging.getLogger(__name__)
 
@@ -15,9 +14,9 @@ async_session_factory: async_sessionmaker[AsyncSession] = async_sessionmaker(eng
 async def connect() -> None:
     async with engine.connect() as conn:
         await conn.close()
-    logger.info(POSTGRESQL_CONNECTED)
+    logger.info("PostgreSQL connected")
 
 
 async def disconnect() -> None:
     await engine.dispose()
-    logger.info(POSTGRESQL_DISCONNECTED)
+    logger.info("PostgreSQL disconnected")

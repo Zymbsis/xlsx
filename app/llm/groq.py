@@ -6,31 +6,29 @@ from fastapi.requests import HTTPConnection
 from groq import AsyncGroq
 
 from app.config import settings
-from app.core.log_messages import GROQ_CONNECTED, GROQ_DISCONNECTED
 from app.exceptions.http import AppHTTPError
-from app.exceptions.messages import GROQ_NOT_INITIALIZED
 
 logger = logging.getLogger(__name__)
 
 
-async def connect(app: FastAPI) -> None:
+async def initialize(app: FastAPI) -> None:
     app.state.groq = AsyncGroq(api_key=settings.groq_api_key)
-    logger.info(GROQ_CONNECTED)
+    logger.info("Groq client initialized")
 
 
-async def disconnect(app: FastAPI) -> None:
+async def shutdown(app: FastAPI) -> None:
     groq_client: AsyncGroq | None = getattr(app.state, "groq", None)
 
     if groq_client is not None:
         await groq_client.close()
-        logger.info(GROQ_DISCONNECTED)
+        logger.info("Groq client shut down")
 
 
 def get_groq_client(conn: HTTPConnection) -> AsyncGroq:
     groq_client: AsyncGroq | None = getattr(conn.app.state, "groq", None)
 
     if groq_client is None:
-        raise AppHTTPError.service_unavailable(GROQ_NOT_INITIALIZED)
+        raise AppHTTPError.service_unavailable("Groq client is not initialized")
 
     return groq_client
 
