@@ -3,6 +3,8 @@ from typing import Annotated, BinaryIO
 import pandas as pd
 from fastapi import Depends
 
+from app.exceptions.http import AppHTTPError
+from app.exceptions.messages import DOMAIN_COLUMN_NOT_FOUND
 from app.schemas.column_mapping import ColumnMapping
 from app.schemas.company_domain import CompanyDomainCreate
 
@@ -13,7 +15,7 @@ class CompanyDomainDataService:
 
     def process_df(self, df: pd.DataFrame, mapping: ColumnMapping, include_company_name: bool = True) -> pd.DataFrame:
         if mapping.domain_column is None:
-            raise ValueError("domain_column is required")
+            raise AppHTTPError.unprocessable(DOMAIN_COLUMN_NOT_FOUND)
 
         if mapping.has_header:
             df = df.iloc[1:].reset_index(drop=True)

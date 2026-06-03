@@ -4,6 +4,8 @@ import pandas as pd
 from groq import AsyncGroq
 
 from app.config import settings
+from app.exceptions.http import AppHTTPError
+from app.exceptions.messages import LLM_EMPTY_RESPONSE
 from app.llm.prompts import MAP_COLUMNS_SYSTEM_PROMPT, MAP_COLUMNS_USER_TEMPLATE
 from app.schemas.column_mapping import ColumnMapping
 
@@ -33,7 +35,7 @@ async def map_columns(df: pd.DataFrame) -> ColumnMapping:
     content = response.choices[0].message.content
 
     if content is None:
-        raise RuntimeError("LLM returned empty content")
+        raise AppHTTPError.internal_server_error(LLM_EMPTY_RESPONSE)
 
     data = json.loads(content)
 

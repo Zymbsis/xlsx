@@ -6,6 +6,13 @@ from fastapi import Depends, HTTPException, UploadFile
 from redis.asyncio import Redis
 
 from app.db.redis import RedisDep
+from app.exceptions.http import AppHTTPError
+from app.exceptions.messages import (
+    BOTH_FILES_EMPTY,
+    DOMAIN_COLUMN_NOT_FOUND,
+    NAC_FILE_EMPTY,
+    RESULT_EMPTY_AFTER_SUBTRACTION,
+)
 from app.llm.column_mapper import map_columns
 from app.repositories.company_domain_repository import CompanyDomainRepoDep, CompanyDomainRepository
 from app.schemas.ws_events import ErrorEvent, ProcessEvent, SuccessEvent, WSEvent
@@ -36,16 +43,16 @@ class CompanyDomainService:
             )
 
             if sup_df.empty and nac_df.empty:
-                raise HTTPException(status_code=422, detail="Both files are empty")
+                raise AppHTTPError.unprocessable(BOTH_FILES_EMPTY)
             if nac_df.empty:
-                raise HTTPException(status_code=422, detail="NAC file is empty")
+                raise AppHTTPError.unprocessable(NAC_FILE_EMPTY)
 
             await self._notify(ws_session_id, ProcessEvent(stage="mapping_columns"))
 
             sup_mapping, nac_mapping = await asyncio.gather(map_columns(sup_df), map_columns(nac_df))
 
             if None in (sup_mapping.domain_column, nac_mapping.domain_column):
-                raise HTTPException(status_code=422, detail="Domain column not found in one of the files")
+                raise AppHTTPError.unprocessable(DOMAIN_COLUMN_NOT_FOUND)
 
             await self._notify(ws_session_id, ProcessEvent(stage="normalizing"))
 
@@ -64,7 +71,7 @@ class CompanyDomainService:
             nac_df = self._company_domain_data_service.subtract_sup_domains(nac_df, sup_df)
 
             if nac_df.empty:
-                raise HTTPException(status_code=422, detail="Result is empty after subtraction")
+                raise AppHTTPError.unprocessable(RESULT_EMPTY_AFTER_SUBTRACTION)
 
             nac_df = self._company_domain_data_service.normalize_df_names(nac_df)
 

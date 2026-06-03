@@ -6,6 +6,8 @@ from redis import asyncio as aioredis
 from redis.asyncio import Redis
 
 from app.config import settings
+from app.exceptions.http import AppHTTPError
+from app.exceptions.messages import REDIS_NOT_INITIALIZED
 
 
 async def connect(app: FastAPI) -> None:
@@ -23,7 +25,7 @@ def get_redis(conn: HTTPConnection) -> Redis:
     redis: Redis | None = getattr(conn.app.state, "redis", None)
 
     if redis is None:
-        raise RuntimeError("Redis is not initialized")
+        raise AppHTTPError.service_unavailable(REDIS_NOT_INITIALIZED)
 
     return redis
 
